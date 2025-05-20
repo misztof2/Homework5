@@ -12,41 +12,42 @@ public:
         bound_left = left;
     }
 
-    bool Collision_T(sf::FloatRect wall_bounds, sf::FloatRect guy_bounds) {
-        return (guy_bounds.top + guy_bounds.height >= wall_bounds.top - 3) &&
-               (guy_bounds.top < wall_bounds.top) &&
-               (guy_bounds.left + guy_bounds.width > wall_bounds.left + 3) &&
-               (guy_bounds.left < wall_bounds.left + wall_bounds.width - 3);
+  
+    bool isColliding(const sf::FloatRect& a, const sf::FloatRect& b) {
+        return a.intersects(b);
     }
 
-    void moveInDirection(const sf::Time &elapsed, const std::vector<sf::Sprite> &obstacles) {
-        float distance = m_speed_y * elapsed.asSeconds();
-        sf::FloatRect rectangle_bounds = getGlobalBounds();
+    void moveInDirection(const sf::Time& elapsed, const std::vector<sf::Sprite>& obstacles) {
+        float distance = m_speed * elapsed.asSeconds();
 
-        bool canMoveUp = true, canMoveDown = true, canMoveLeft = true, canMoveRight = true;
+        sf::Vector2f originalPosition = getPosition();
+        sf::Vector2f tryMove(0.f, 0.f);
 
-        for (auto &obstacle : obstacles) {
-            sf::FloatRect guy_bounds = getGlobalBounds();
-            sf::FloatRect wall_bounds = obstacle.getGlobalBounds();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) && getPosition().y > bound_top)
+            tryMove.y -= distance;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) &&
+            getPosition().y + getGlobalBounds().height < bound_bottom)
+            tryMove.y += distance;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && getPosition().x > bound_left)
+            tryMove.x -= distance;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) &&
+            getPosition().x + getGlobalBounds().width < bound_right)
+            tryMove.x += distance;
 
-            if (Collision_T(wall_bounds, guy_bounds)) {
-                canMoveUp = false;
+        move(tryMove);
+        sf::FloatRect newBounds = getGlobalBounds();
+
+   
+        for (const auto& obstacle : obstacles) {
+            if (isColliding(obstacle.getGlobalBounds(), newBounds)) {
+                setPosition(originalPosition); 
+                break;
             }
         }
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) && rectangle_bounds.top > bound_top && canMoveUp)
-            move(0, -distance);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down) && rectangle_bounds.top + rectangle_bounds.height < bound_bottom && canMoveDown)
-            move(0, distance);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && rectangle_bounds.left > bound_left && canMoveLeft)
-            move(-distance, 0);
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && rectangle_bounds.left + rectangle_bounds.width < bound_right && canMoveRight)
-            move(distance, 0);
     }
 
 private:
-    int m_speed_x = 200;
-    int m_speed_y = 200;
+    int m_speed = 200;
     int bound_top = 0, bound_bottom = 0, bound_left = 0, bound_right = 0;
 };
 
@@ -54,7 +55,6 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "Maze Game");
     sf::Clock clock;
 
-    // Load Textures
     sf::Texture guy_tex, grass_tex, wall_tex;
 
     if (!guy_tex.loadFromFile("guy.png") ||
@@ -64,32 +64,69 @@ int main() {
         return -1;
     }
 
-    // Grass Background
+
     sf::Sprite grass;
     grass.setTexture(grass_tex);
-    grass.setScale(800.f / grass_tex.getSize().x, 600.f / grass_tex.getSize().y);
+    grass.setScale(
+        window.getSize().x / static_cast<float>(grass_tex.getSize().x),
+        window.getSize().y / static_cast<float>(grass_tex.getSize().y)
+        );
 
-    // Walls (maze structure)
     std::vector<sf::Sprite> walls;
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 31; ++i) {
         sf::Sprite wall;
         wall.setTexture(wall_tex);
-        wall.setScale(0.5f, 0.5f);
+        wall.setScale(0.3f, 0.3f);  // Smaller walls
         walls.push_back(wall);
     }
+    // walls[0].setPosition(300, 100);
+    // walls[1].setPosition(300, 160);
+    // walls[2].setPosition(300, 220);
+    // walls[3].setPosition(400, 100);
+    // walls[4].setPosition(500, 100);
+    // walls[5].setPosition(500, 160);
+    walls[0].setPosition(100, 100);
+    walls[1].setPosition(100, 160);
+    walls[2].setPosition(100, 220);
+    walls[3].setPosition(100, 280);
+    walls[4].setPosition(100, 340);
 
-    walls[0].setPosition(200, 100);
-    walls[1].setPosition(200, 150);
-    walls[2].setPosition(200, 200);
-    walls[3].setPosition(300, 100);
-    walls[4].setPosition(400, 100);
-    walls[5].setPosition(400, 150);
+    walls[5].setPosition(200, 100);
+    walls[6].setPosition(200, 160);
+    walls[7].setPosition(200, 220);
+    walls[8].setPosition(240, 140);
+    walls[9].setPosition(280, 100);
+    walls[10].setPosition(320, 140);
+    walls[11].setPosition(360, 100);
+    walls[12].setPosition(360, 160);
+    walls[13].setPosition(360, 220);
 
-    // Guy (player)
+
+    walls[14].setPosition(440, 220);
+    walls[15].setPosition(440, 160);
+    walls[16].setPosition(440, 100);
+    walls[17].setPosition(480, 100);
+    walls[18].setPosition(520, 100);
+    walls[19].setPosition(560, 100);
+    walls[20].setPosition(560, 160);
+    walls[21].setPosition(560, 220);
+    walls[22].setPosition(480, 160);
+    walls[23].setPosition(520, 160);
+
+    walls[24].setPosition(640, 100);
+    walls[25].setPosition(640, 160);
+    walls[26].setPosition(640, 220);
+    walls[27].setPosition(680, 140);
+    walls[28].setPosition(720, 100);
+    walls[29].setPosition(720, 160);
+    walls[30].setPosition(720, 220);
+
+
+   
     CustomSprite guy;
     guy.setTexture(guy_tex);
-    guy.setScale(0.3f, 0.3f);
-    guy.setPosition(100, 100);
+    guy.setScale(0.9f, 0.9f); 
+    guy.setPosition(50, 400);
 
     while (window.isOpen()) {
         sf::Time elapsed = clock.restart();
@@ -105,7 +142,8 @@ int main() {
 
         window.clear();
         window.draw(grass);
-        for (auto &wall : walls) window.draw(wall);
+        for (const auto& wall : walls)
+            window.draw(wall);
         window.draw(guy);
         window.display();
     }
